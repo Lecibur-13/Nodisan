@@ -11,6 +11,7 @@ import chalk from 'chalk';
 import util from 'util';
 
 import { CONFIG } from './Templates/config.template.js';
+import { KAFKA } from './Templates/kafka.template.js';
 
 const execPromise = util.promisify(exec);
 
@@ -121,7 +122,7 @@ function makeConsumer() {
                     message: 'Nombre del topic',
                 },
             ]).then((answers) => {
-                const consumer = CONFIG.CONSUMER(answers.name, answers.topic);
+                const consumer = KAFKA.CONSUMER(answers.name, answers.topic);
 
                 fs.outputFile(`Http/Consumers/${answers.name}.js`, consumer)
                     .then(() => console.log(chalk.green(`Consumer ${answers.name} created successfully!`)))
@@ -147,7 +148,7 @@ function makeProducer() {
                     message: 'Nombre del topic',
                 },
             ]).then((answers) => {
-                const producer = CONFIG.PRODUCER(answers.name, answers.topic);
+                const producer = KAFKA.PRODUCER(answers.name, answers.topic);
 
                 fs.outputFile(`Http/Producer/${answers.name}.js`, producer)
                     .then(() => console.log(chalk.green(`producer ${answers.name} created successfully!`)))
