@@ -1,0 +1,23 @@
+{
+  "name": "nodisan-js",
+  "version": "1.0.1",
+  "description": "CLI for Minimalist-Express",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [
+    "cli",
+    "Minimalist-Express"
+  ],
+  "author": "Rubicel Perez",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^11.0.1"
+  },
+  "bin": {
+    "nodisan": "./index.js"
+  }
+}
