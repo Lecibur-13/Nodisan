@@ -257,5 +257,4 @@ async function kafkaMigrate() {
         });
 }
 
-
 main();
