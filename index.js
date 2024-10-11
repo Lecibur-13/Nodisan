@@ -16,7 +16,7 @@ import { KAFKA } from './Templates/kafka.template.js';
 const execPromise = util.promisify(exec);
 
 // Define CLI version
-program.version('1.2.0');
+program.version('1.2.1');
 
 function main() {
     configKafka();
@@ -37,15 +37,15 @@ async function makeToken() {
         return crypto.randomBytes(length).toString('hex');
     };
 
-    // Encrypt token with bcrypt
-    const hashToken = async (token) => {
-        return new Promise((resolve, reject) => {
-            bcrypt.hash(token, 10, (err, hash) => {
-                if (err) reject(err);
-                else resolve(hash);
-            });
-        });
-    };
+    // Encrypt token with bcrypt - Deprecated
+    // const hashToken = async (token) => {
+    //     return new Promise((resolve, reject) => {
+    //         bcrypt.hash(token, 10, (err, hash) => {
+    //             if (err) reject(err);
+    //             else resolve(hash);
+    //         });
+    //     });
+    // };
 
     program
         .command('make:token')
@@ -56,11 +56,8 @@ async function makeToken() {
                 const tokenLength = 64;
                 const token = generateRandomToken(tokenLength);
 
-                // hash token
-                const tokenHash = await hashToken(token);
-
                 // Escape '/' characters in the hash for sed (if necessary for use in other scripts)
-                const escapedTokenHash = tokenHash.replace(/\//g, '\\/');
+                const escapedTokenHash = token.replace(/\//g, '\\/');
 
                 // Read .env file
                 const envPath = '.env';

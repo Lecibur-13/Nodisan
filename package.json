@@ -1,6 +1,6 @@
 {
   "name": "nodisan-js",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "CLI for Minimalist-Express",
   "main": "index.js",
   "type": "module",
@@ -15,7 +15,8 @@
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
-    "inquirer": "^11.0.1"
+    "inquirer": "^11.0.1",
+    "nodisan-js": "file:"
   },
   "bin": {
     "nodisan": "index.js"
