@@ -1,22 +1,27 @@
 #!/usr/bin/env node
 
-import { exec } from 'child_process';
-import { program } from 'commander';
-
-import inquirer from 'inquirer';
-import fs from 'fs-extra';
-import crypto from 'crypto';
-import bcrypt from 'bcrypt';
-import chalk from 'chalk';
-import util from 'util';
-
 import { CONFIG } from './Templates/config.template.js';
 import { KAFKA } from './Templates/kafka.template.js';
 
+import { exec } from 'child_process';
+import { program } from 'commander';
+import { fileURLToPath } from 'url';
+
+// import bcrypt from 'bcrypt';
+
+import fs       from 'fs-extra';
+import inquirer from 'inquirer';
+import crypto   from 'crypto';
+import chalk    from 'chalk';
+import path     from 'path';
+import util     from 'util';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const execPromise = util.promisify(exec);
 
 // Define CLI version
-program.version('1.2.1');
+program.version('1.2.2');
 
 function main() {
     configKafka();
@@ -27,6 +32,7 @@ function main() {
     startKafkaContainer();
     generateTopicsList();
     kafkaMigrate();
+    setKafkaDir();
 
     program.parse(process.argv);
 }
@@ -244,21 +250,42 @@ function generateTopicsList() {
 
 async function kafkaMigrate() {
     program
-        .command('kafka:migrate')
+        .command('kafka:migrate [variable]')
+        .option('--windows, -w', 'Run on Windows environment')
         .description('Creates topics on the Kafka server from the topics.txt file')
-        .action(async () => {
+        .action(async (variable, options) => {
             try {
                 const topicsFile = 'topics.txt';
+                const configFilePath = path.join(__dirname, 'kafka_config.json');
+
                 if (!fs.existsSync(topicsFile)) {
                     console.error(chalk.red('Error: The topics.txt file does not exist.'));
                     return;
                 }
 
+                if (!fs.existsSync(configFilePath)) {
+                    console.error(chalk.red('Error: Kafka config file does not exist.'));
+                    return;
+                }
+
+                const config = await fs.readJson(configFilePath);
+
+                if (!config[variable]) {
+                    console.error(chalk.red(`Error: No path found for ${variable}.`));
+                    return;
+                }
+
+                const kafkaDir = config[variable];
                 const topics = fs.readFileSync(topicsFile, 'utf8').split('\n').filter(Boolean);
 
                 for (const topic of topics) {
                     console.log(`Creating the topic ${topic}...`);
-                    await execPromise(`docker exec kafka-server /opt/kafka/bin/kafka-topics.sh --create --topic ${topic} --bootstrap-server localhost:9092`);
+                    
+                    const kafkaCommand = options.windows
+                        ? `${kafkaDir}\\bin\\windows\\kafka-topics.bat --create --topic ${topic} --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1`
+                        : `${kafkaDir}/bin/kafka-topics.sh --create --topic ${topic} --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1`;
+
+                    await execPromise(kafkaCommand);
                     console.log(`Topic ${topic} created successfully.`);
                 }
             } catch (error) {
@@ -273,6 +300,33 @@ function toPascalCase(str) {
         .split(/[\s-]+/) // Split the string by spaces or hyphens
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize the first letter and lowercase the rest
         .join('');
+}
+
+function setKafkaDir() {
+    program
+        .command('kafka:dir <variable> <path>')
+        .description('Set the directory path of Kafka installation')
+        .action(async (variable, dir) => {
+            try {
+                const configFilePath = path.join(__dirname, 'kafka_config.json');
+                let config = {};
+
+                // Reemplaza los backslashes simples por dobles automáticamente
+                const normalizedPath = dir.replace(/\\/g, '\\\\');
+
+                if (fs.existsSync(configFilePath)) {
+                    config = await fs.readJson(configFilePath);
+                }
+
+                // Guarda la ruta normalizada
+                config[variable] = normalizedPath;
+
+                await fs.writeJson(configFilePath, config, { spaces: 2 });
+                console.log(chalk.green(`Kafka directory set for ${variable}: ${normalizedPath}`));
+            } catch (error) {
+                console.error(chalk.red('Error:'), error.message);
+            }
+        });
 }
 
 main();
